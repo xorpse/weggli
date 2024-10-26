@@ -1,5 +1,5 @@
 [package]
-name = "weggli"
+name = "wegglix"
 version = "0.2.5"
 authors = ["fwilhelm"]
 edition = "2018"
@@ -16,6 +16,7 @@ crate-type = ["rlib", "dylib"]
 
 [[bin]]
 name = "weggli"
+path = "src/main.rs"
 
 [dependencies]
 tree-sitter = "0.20.9"

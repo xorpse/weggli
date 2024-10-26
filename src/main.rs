@@ -34,11 +34,11 @@ use std::{io::prelude::*, path::PathBuf};
 use thread_local::ThreadLocal;
 use tree_sitter::Tree;
 use walkdir::WalkDir;
-use weggli::RegexMap;
 
-use weggli::parse_search_pattern;
-use weggli::query::QueryTree;
-use weggli::result::QueryResult;
+use wegglix::RegexMap;
+use wegglix::parse_search_pattern;
+use wegglix::query::QueryTree;
+use wegglix::result::QueryResult;
 
 mod cli;
 
@@ -299,7 +299,7 @@ fn parse_files_worker(
                     None
                 } else {
                     let mut parser = tl
-                        .get_or(|| RefCell::new(weggli::get_parser(is_cpp)))
+                        .get_or(|| RefCell::new(wegglix::get_parser(is_cpp)))
                         .borrow_mut();
                     let tree = parser.parse(&source.as_bytes(), None).unwrap();
                     Some((tree, source.to_string()))
@@ -321,7 +321,7 @@ struct ResultsCtx {
     query_index: usize,
     path: String,
     source: std::sync::Arc<String>,
-    result: weggli::result::QueryResult,
+    result: wegglix::result::QueryResult,
 }
 
 /// Fetches parsed ASTs from `receiver`, runs all queries in `work` on them and

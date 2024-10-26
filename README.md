@@ -1,4 +1,7 @@
-# weggli
+# weggli(x)
+
+NOTE: this fork exists so the latest changes to the crate, i.e., >= 0.2.5, are
+present in a version usable via crates.io.
 
 ![weggli example](example.gif)
 
