@@ -9,7 +9,7 @@ fuzz_target!(|data: &[u8]| {
     let is_cpp = data[0] == 0;
 
     if let Ok(query) = std::str::from_utf8(&data[1..]) {
-        let tree = weggli::parse(query, is_cpp);
+        let tree = wegglix::parse(query, is_cpp);
         if tree.root_node().has_error() {
             return;
         }
@@ -25,7 +25,7 @@ fuzz_target!(|data: &[u8]| {
 
         let mut cursor = c.unwrap().walk();
 
-        let _ = weggli::builder::build_query_tree(query, &mut cursor, is_cpp, None);
+        let _ = wegglix::builder::build_query_tree(query, &mut cursor, is_cpp, None);
     }
 });
 

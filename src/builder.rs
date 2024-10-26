@@ -605,11 +605,11 @@ impl QueryBuilder {
                     format! {"(identifier) {}",capture_str}
                 } else if self.cpp {
                     format! {"[(field_expression field: (field_identifier){0})
-                    (qualified_identifier name: (identifier){0}) 
-                    (qualified_identifier name: (qualified_identifier (identifier){0})) 
-                    (qualified_identifier name: (qualified_identifier (qualified_identifier (identifier){0}))) 
-                    (qualified_identifier name: (qualified_identifier (qualified_identifier 
-                        (qualified_identifier (identifier){0})))) 
+                    (qualified_identifier name: (identifier){0})
+                    (qualified_identifier name: (qualified_identifier (identifier){0}))
+                    (qualified_identifier name: (qualified_identifier (qualified_identifier (identifier){0})))
+                    (qualified_identifier name: (qualified_identifier (qualified_identifier
+                        (qualified_identifier (identifier){0}))))
                     (identifier) {0}]",capture_str}
                 } else {
                     format! {"[(field_expression field: (field_identifier){0})
@@ -656,7 +656,7 @@ impl QueryBuilder {
             let right = optional_cast(self.build(c, depth + 1, strict_mode, kind)?);
 
             format! {r"[(assignment_expression left: {0} right: {1})
-                        (init_declarator declarator: {0} value: {1}) 
+                        (init_declarator declarator: {0} value: {1})
                         (init_declarator declarator:(pointer_declarator declarator: {0}) value: {1})]", left,right}
         };
         c.goto_parent();

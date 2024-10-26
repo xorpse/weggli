@@ -8,39 +8,18 @@ description = "weggli is a fast and robust semantic search tool for C and C++ co
 repository = "https://github.com/weggli-rs/weggli"
 rust-version = "1.63.0"
 
-[features]
-python = ["pyo3"]
-
-[lib]
-crate-type = ["rlib", "dylib"]
-
-[[bin]]
-name = "weggli"
-path = "src/main.rs"
-
 [dependencies]
-tree-sitter = "0.20.9"
-log = "0.4.17"
-clap = "2.34.0"
-walkdir = "2.3.2"
-rayon = "1.5.3"
-colored = "2.0.0"
-simplelog = "0.12.0"
+colored = "2"
+log = "0.4"
+rayon = "1.10"
 regex = "1"
-rustc-hash = "1.1.0"
+rustc-hash = "2"
+streaming-iterator = "0.1"
 thread_local = "1.1"
-
-
-[dependencies.pyo3]
-version = "0.17.1"
-features = ["extension-module"]
-optional = true
-
-[target.'cfg(target_family = "unix")'.dependencies]
-nix = "0.25.0"
+tree-sitter = "0.24"
 
 [build-dependencies]
-cc = "1.0.83"
+cc = "1"
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }

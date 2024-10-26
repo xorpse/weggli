@@ -28,8 +28,6 @@ pub mod builder;
 mod capture;
 mod util;
 
-#[cfg(feature = "python")]
-pub mod python;
 pub mod query;
 pub mod result;
 
@@ -60,7 +58,7 @@ pub fn get_parser(cpp: bool) -> Parser {
     };
 
     let mut parser  = Parser::new();
-    if let Err(e) = parser.set_language(language) {
+    if let Err(e) = parser.set_language(&language) {
         eprintln!("{}", e);
         panic!();
     }
@@ -75,7 +73,7 @@ fn ts_query(sexpr: &str, cpp: bool) -> Result<tree_sitter::Query, QueryError> {
         unsafe { tree_sitter_cpp() }
     };
 
-    match Query::new(language, sexpr) {
+    match Query::new(&language, sexpr) {
         Ok(q) => Ok(q),
         Err(e) => {
             let errmsg = format!( "Tree sitter query generation failed: {:?}\n {} \n sexpr: {}\n This is a bug! Can't recover :/", e.kind, e.message, sexpr);

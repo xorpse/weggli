@@ -1,4 +1,0 @@
-setuptools
-wheel
-setuptools-rust
-git+https://github.com/weggli-rs/weggli@main#egg=weggli

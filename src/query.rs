@@ -14,8 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use rustc_hash::FxHashMap;
 use std::collections::HashSet;
+
+use rustc_hash::FxHashMap;
+use streaming_iterator::StreamingIterator;
 use tree_sitter::{Node, Query};
 
 use crate::capture::Capture;
@@ -142,7 +144,9 @@ impl QueryTree {
             pattern_results.push(Vec::new());
         }
 
-        for m in qc.matches(&self.query, root, source.as_bytes()) {
+        let mut matches = qc.matches(&self.query, root, source.as_bytes());
+
+        while let Some(m) = matches.next() {
             // Process the query match, run subqueries and store the final QueryResults in pattern_results
             pattern_results[m.pattern_index].extend(self.process_match(cache, source, &m));
         }
