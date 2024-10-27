@@ -1,7 +1,9 @@
 # weggli(x)
 
-NOTE: this fork exists so the latest changes to the crate, i.e., >= 0.2.5, are
-present in a version usable via crates.io.
+NOTE: this fork largely exists so the latest changes to the crate, i.e., >=
+0.2.5, are present in a version usable via crates.io. It removes most of the
+user-facing part of weggli (cli, plugins), and makes changes for a more
+pleasant library experienc.
 
 ![weggli example](example.gif)
 
@@ -14,13 +16,13 @@ resembles C and C++ code, making it easy to turn interesting code patterns into 
 
 weggli is inspired by great tools like [Semgrep](https://semgrep.dev/), [Coccinelle](https://coccinelle.gitlabpages.inria.fr/website/), [joern](https://joern.readthedocs.io/en/latest/) and [CodeQL](https://securitylab.github.com/tools/codeql), but makes some different design decisions:
 
-- **C++ support**: weggli has first class support for modern C++ constructs, such as lambda expressions, range-based for loops and constexprs. 
+- **C++ support**: weggli has first class support for modern C++ constructs, such as lambda expressions, range-based for loops and constexprs.
 
-- **Minimal setup**: weggli should work *out-of-the box* against most software you will encounter. weggli does not require the ability to build the software and can work with incomplete sources or missing dependencies. 
-  
+- **Minimal setup**: weggli should work *out-of-the box* against most software you will encounter. weggli does not require the ability to build the software and can work with incomplete sources or missing dependencies.
+
 - **Interactive**: weggli is designed for interactive usage and fast query performance. Most of the time, a weggli query will be faster than a grep search. The goal is to enable an interactive workflow where quick switching between code review and query creation/improvement is possible.
-  
-- **Greedy**: weggli's pattern matching is designed to find as many (useful) matches as possible for a specific query. While this increases the risk of false positives it simplifies query creation. For example, the query  `$x = 10;` will match both assignment expressions (`foo = 10;`) and declarations (`int bar = 10;`). 
+
+- **Greedy**: weggli's pattern matching is designed to find as many (useful) matches as possible for a specific query. While this increases the risk of false positives it simplifies query creation. For example, the query  `$x = 10;` will match both assignment expressions (`foo = 10;`) and declarations (`int bar = 10;`).
 
 
 
@@ -63,8 +65,8 @@ Use -h for short descriptions and --help for more details.
                       following sub query. For example, '{not: $fv==NULL; not: $fv!=NULL *$v;}'
                       would find pointer dereferences that are not preceded by a NULL check.
 
-            strict:   Enable stricter matching. This turns off statement unwrapping 
-                      and greedy function name matching. For example 'strict: func();' 
+            strict:   Enable stricter matching. This turns off statement unwrapping
+                      and greedy function name matching. For example 'strict: func();'
                       will not match on 'if (func() == 1)..' or 'a->func()' anymore.
 
              weggli automatically unwraps expression statements in the query source
@@ -195,8 +197,8 @@ $func(&$p);
 Potentially insecure WeakPtr usage:
 ```cpp
 weggli --cpp '{
-$x = _.GetWeakPtr(); 
-DCHECK($x); 
+$x = _.GetWeakPtr();
+DCHECK($x);
 $x->_;}' ./target/src
 ```
 
@@ -206,7 +208,7 @@ weggli -X 'DCHECK(_!=_.end());' ./target/src
 ```
 
 Functions that perform writes into a stack-buffer based on
-a function argument. 
+a function argument.
 ```c
 weggli '_ $fn(_ $limit) {
     _ $buf[_];
@@ -240,7 +242,7 @@ $ cargo install weggli
 
 ```sh
 # optional: install rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh 
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 git clone https://github.com/googleprojectzero/weggli.git
 cd weggli; cargo build --release
@@ -252,8 +254,8 @@ cd weggli; cargo build --release
 Weggli is built on top of the [`tree-sitter`](https://tree-sitter.github.io/tree-sitter/) parsing library and its [`C`](https://github.com/tree-sitter/tree-sitter-c) and [`C++`](https://github.com/tree-sitter/tree-sitter-cpp) grammars.
 Search queries are first parsed using an extended version of the corresponding grammar, and the resulting `AST` is
 transformed into a set of tree-sitter queries
-in `builder.rs`. 
-The actual query matching is implemented in `query.rs`, which is a relatively small wrapper around tree-sitter's query engine to add weggli specific features. 
+in `builder.rs`.
+The actual query matching is implemented in `query.rs`, which is a relatively small wrapper around tree-sitter's query engine to add weggli specific features.
 
 
 ## Contributing
