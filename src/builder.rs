@@ -16,12 +16,13 @@ limitations under the License.
 
 use std::collections::{HashMap, HashSet};
 
+use colored::Colorize;
+use tree_sitter::{Node, TreeCursor};
+
 use crate::capture::{add_capture, Capture};
 use crate::query::{NegativeQuery, QueryTree};
 use crate::util::parse_number_literal;
-use crate::{QueryError, RegexMap};
-use colored::Colorize;
-use tree_sitter::{Node, TreeCursor};
+use crate::{RegexMap, WeggliError};
 
 /// Translate a parsed and validated input source (specified by `source` and `cursor`) into a `QueryTree`.
 /// When `is_cpp` is set, C++ specific features are enabled.
@@ -30,7 +31,7 @@ pub fn build_query_tree(
     cursor: &mut TreeCursor,
     is_cpp: bool,
     regex_constraints: Option<RegexMap>,
-) -> Result<QueryTree, QueryError> {
+) -> Result<QueryTree, WeggliError> {
     _build_query_tree(source, cursor, 0, is_cpp, false, false, regex_constraints)
 }
 
@@ -42,7 +43,7 @@ fn _build_query_tree(
     is_multi_pattern: bool,
     strict_mode: bool,
     regex_constraints: Option<RegexMap>,
-) -> Result<QueryTree, QueryError> {
+) -> Result<QueryTree, WeggliError> {
     let mut b = QueryBuilder {
         query_source: source.to_string(),
         captures: Vec::new(),
@@ -57,7 +58,7 @@ fn _build_query_tree(
 
     // Skip the root node if it's a translation_unit.
     if c.node().kind() == "translation_unit" {
-        debug!("query cursor specifies translation_unit");
+        log::debug!("query cursor specifies translation_unit");
         c.goto_first_child();
     }
 
@@ -70,7 +71,7 @@ fn _build_query_tree(
         // extract the function that contains a match. Of course we should not do that
         // if the user specifies a function_definition as part of the query.
         let needs_anchor = c.node().kind() == "compound_statement" && id == 0;
-        debug!("query needs anchor: {}", needs_anchor);
+        log::debug!("query needs anchor: {}", needs_anchor);
 
         // The main work happens here. Iterate through the AST and create a tree-sitter query
         let mut s = b.build(c, 0, strict_mode, kind)?;
@@ -125,7 +126,7 @@ fn _build_query_tree(
         s
     };
 
-    debug!("tree_sitter query {}: {}", id, sexp);
+    log::debug!("tree_sitter query {}: {}", id, sexp);
 
     Ok(QueryTree::new(
         crate::ts_query(&sexp, is_cpp)?,
@@ -254,7 +255,7 @@ impl QueryBuilder {
         depth: usize,
         strict_mode: bool,
         parent: &'static str,
-    ) -> Result<String, QueryError> {
+    ) -> Result<String, WeggliError> {
         // This function works by recursively processing every node in the tree,
         // creating new sub queries, captures or negative queries when needed
         // and slowly constructing the final tree-sitter query (note that query predicates are only
@@ -388,7 +389,7 @@ impl QueryBuilder {
                 let capture = if let Some(num) = parse_number_literal(pattern) {
                     Capture::Number(num)
                 } else {
-                    warn! {"Could not parse {} as a number. Forcing string matching", pattern}
+                    log::warn! {"Could not parse {} as a number. Forcing string matching", pattern}
                     Capture::Check(pattern.to_string())
                 };
 
@@ -477,13 +478,13 @@ impl QueryBuilder {
         }
         c.goto_parent();
 
-        debug!("generated query: {}", result);
+        log::debug!("generated query: {}", result);
         Ok(result + ")")
     }
 
     // Create a negative query matching the statement after
     // a NOT: label.
-    fn build_negative_query(&mut self, c: &mut TreeCursor) -> Result<(), QueryError> {
+    fn build_negative_query(&mut self, c: &mut TreeCursor) -> Result<(), WeggliError> {
         let negated_query = c.node().child(2).unwrap();
         // Save a reference to the previous capture so
         // query.rs can later enforce ordering
@@ -510,7 +511,7 @@ impl QueryBuilder {
         &mut self,
         c: &mut TreeCursor,
         parent: &'static str,
-    ) -> Result<String, QueryError> {
+    ) -> Result<String, WeggliError> {
         let pattern = self.get_text(&c.node());
         let kind = c.node().kind();
 
@@ -524,11 +525,11 @@ impl QueryBuilder {
         let mut result = if kind == "type_identifier" {
             "[ (type_identifier) (sized_type_specifier) (primitive_type)]".to_string()
         } else if kind == "identifier" && pattern.starts_with('$') {
-            if is_num_var(pattern) && parent!="declarator" {
+            if is_num_var(pattern) && parent != "declarator" {
                 "(number_literal)".to_string()
-            }
-            else if self.cpp {
-                "[(identifier) (field_expression) (field_identifier) (qualified_identifier) (this)]".to_string()
+            } else if self.cpp {
+                "[(identifier) (field_expression) (field_identifier) (qualified_identifier) (this)]"
+                    .to_string()
             } else {
                 "[(identifier) (field_expression) (field_identifier)]".to_string()
             }
@@ -555,7 +556,7 @@ impl QueryBuilder {
         depth: usize,
         strict_mode: bool,
         parent: &'static str,
-    ) -> Result<Option<String>, QueryError> {
+    ) -> Result<Option<String>, WeggliError> {
         if self.is_subexpr_wildcard(c.node()) {
             let mut arg = c.node().child_by_field_name("arguments").unwrap().walk();
 
@@ -564,10 +565,12 @@ impl QueryBuilder {
             let mut copy = arg.clone();
             copy.goto_next_sibling();
             if copy.goto_next_sibling() {
-                warn! {"sub expression '{}' with multiple arguments is not supported.
+                log::warn!(
+                    "sub expression '{}' with multiple arguments is not supported.
                 Do you want to match on a function call '$foo()' instead?",
-                self.get_text(&c.node()).to_string().red()};
-                warn! {"converting to function call..."};
+                    self.get_text(&c.node()).to_string().red()
+                );
+                log::warn!("converting to function call...");
                 return Ok(None);
             }
 
@@ -629,7 +632,7 @@ impl QueryBuilder {
         c: &mut TreeCursor,
         depth: usize,
         strict_mode: bool,
-    ) -> Result<String, QueryError> {
+    ) -> Result<String, WeggliError> {
         let kind = c.node().kind();
 
         assert!(c.goto_first_child());

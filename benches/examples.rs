@@ -19,7 +19,7 @@ use std::time::Duration;
 use criterion::{criterion_group, criterion_main, Criterion};
 
 fn run_query(s: &(tree_sitter::Tree, String), pattern: &str) {
-    let tree = wegglix::parse(pattern, false);
+    let tree = wegglix::parse(pattern, false).unwrap();
 
     let mut c = tree.walk();
     c.goto_first_child();
@@ -39,7 +39,7 @@ fn read_file(path: &str) -> String {
 fn bench(c: &mut Criterion) {
     let p = |path| {
         let source = read_file(path);
-        (wegglix::parse(&source, false), source)
+        (wegglix::parse(&source, false).unwrap(), source)
     };
 
     let cluster = p("./third_party/examples/cluster.c");

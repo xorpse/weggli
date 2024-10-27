@@ -14,59 +14,61 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-use std::collections::{hash_map::Keys, HashMap};
+use std::collections::hash_map::Keys;
+use std::collections::HashMap;
 
 use colored::Colorize;
 use query::QueryTree;
 use regex::Regex;
+use thiserror::Error;
 use tree_sitter::{Language, Parser, Query, Tree};
 
-#[macro_use]
-extern crate log;
-
 pub mod builder;
-mod capture;
-mod util;
-
+pub mod capture;
 pub mod query;
 pub mod result;
+
+mod util;
 
 extern "C" {
     fn tree_sitter_c() -> Language;
     fn tree_sitter_cpp() -> Language;
 }
 
-#[derive(Debug, Clone)]
-pub struct QueryError {
-    pub message: String,
+#[derive(Debug, Error)]
+pub enum WeggliError {
+    #[error("cannot set parser language: {0}")]
+    Language(#[from] tree_sitter::LanguageError),
+    #[error("cannot parse input")]
+    Parser,
+    #[error("{0}")]
+    Query(String),
 }
 
 /// Helper function to parse an input string
 /// into a tree-sitter tree, using our own slightly modified
 /// C grammar. This function won't fail but the returned
 /// Tree might be invalid and contain errors.
-pub fn parse(source: &str, cpp: bool) -> Tree {
-    let mut parser = get_parser(cpp);
-    parser.parse(source, None).unwrap()
+pub fn parse(source: &str, cpp: bool) -> Result<Tree, WeggliError> {
+    let mut parser = get_parser(cpp)?;
+    parser.parse(source, None).ok_or(WeggliError::Parser)
 }
 
-pub fn get_parser(cpp: bool) -> Parser {
+pub fn get_parser(cpp: bool) -> Result<Parser, WeggliError> {
     let language = if !cpp {
         unsafe { tree_sitter_c() }
     } else {
         unsafe { tree_sitter_cpp() }
     };
 
-    let mut parser  = Parser::new();
-    if let Err(e) = parser.set_language(&language) {
-        eprintln!("{}", e);
-        panic!();
-    }
-    parser
+    let mut parser = Parser::new();
+    parser.set_language(&language)?;
+
+    Ok(parser)
 }
 
 // Internal helper function to create a new tree-sitter query.
-fn ts_query(sexpr: &str, cpp: bool) -> Result<tree_sitter::Query, QueryError> {
+fn ts_query(sexpr: &str, cpp: bool) -> Result<tree_sitter::Query, WeggliError> {
     let language = if !cpp {
         unsafe { tree_sitter_c() }
     } else {
@@ -77,7 +79,7 @@ fn ts_query(sexpr: &str, cpp: bool) -> Result<tree_sitter::Query, QueryError> {
         Ok(q) => Ok(q),
         Err(e) => {
             let errmsg = format!( "Tree sitter query generation failed: {:?}\n {} \n sexpr: {}\n This is a bug! Can't recover :/", e.kind, e.message, sexpr);
-            Err(QueryError { message: errmsg })
+            Err(WeggliError::Query(errmsg))
         }
     }
 }
@@ -114,8 +116,8 @@ pub fn parse_search_pattern(
     is_cpp: bool,
     force_query: bool,
     regex_constraints: Option<RegexMap>,
-) -> Result<QueryTree, QueryError> {
-    let mut tree = parse(pattern, is_cpp);
+) -> Result<QueryTree, WeggliError> {
+    let mut tree = parse(pattern, is_cpp)?;
     let mut p = pattern;
 
     let temp_pattern;
@@ -124,9 +126,9 @@ pub fn parse_search_pattern(
     // weggli 'memcpy(a,b,size)' should work.
     if tree.root_node().has_error() && !pattern.ends_with(';') {
         temp_pattern = format!("{};", &p);
-        let fixed_tree = parse(&temp_pattern, is_cpp);
+        let fixed_tree = parse(&temp_pattern, is_cpp)?;
         if !fixed_tree.root_node().has_error() {
-            info!("normalizing query: add missing ;");
+            log::info!("normalizing query: add missing ;");
             tree = fixed_tree;
             p = &temp_pattern;
         }
@@ -141,9 +143,9 @@ pub fn parse_search_pattern(
         if let Some(n) = c {
             if !VALID_NODE_KINDS.contains(&n.kind()) {
                 temp_pattern2 = format!("{{{}}}", &p);
-                let fixed_tree = parse(&temp_pattern2, is_cpp);
+                let fixed_tree = parse(&temp_pattern2, is_cpp)?;
                 if !fixed_tree.root_node().has_error() {
-                    info!("normalizing query: add {}", "{}");
+                    log::info!("normalizing query: add {}", "{}");
                     tree = fixed_tree;
                     p = &temp_pattern2;
                 }
@@ -174,7 +176,7 @@ fn validate_query<'a>(
     tree: &'a tree_sitter::Tree,
     query: &str,
     force: bool,
-) -> Result<tree_sitter::TreeCursor<'a>, QueryError> {
+) -> Result<tree_sitter::TreeCursor<'a>, WeggliError> {
     if tree.root_node().has_error() && !force {
         let mut errmsg = format!("{}", "Error! Query parsing failed:".red().bold());
         let mut cursor = tree.root_node().walk();
@@ -214,33 +216,29 @@ fn validate_query<'a>(
             ));
         }
 
-        return Err(QueryError { message: errmsg });
+        return Err(WeggliError::Query(errmsg));
     }
 
-    info!("query sexp: {}", tree.root_node().to_sexp());
+    log::info!("query sexp: {}", tree.root_node().to_sexp());
 
     let mut c = tree.walk();
 
     if c.node().named_child_count() > 1 {
-        return Err(QueryError {
-            message: format!(
-                "{}'{}' query contains multiple root nodes",
-                "Error: ".red(),
-                query
-            ),
-        });
+        return Err(WeggliError::Query(format!(
+            "{}'{}' query contains multiple root nodes",
+            "Error: ".red(),
+            query
+        )));
     }
 
     c.goto_first_child();
 
     if !VALID_NODE_KINDS.contains(&c.node().kind()) {
-        return Err(QueryError {
-            message: format!(
-                "{}'{}' is not a supported query root node.",
-                "Error: ".red(),
-                query
-            ),
-        });
+        return Err(WeggliError::Query(format!(
+            "{}'{}' is not a supported query root node.",
+            "Error: ".red(),
+            query
+        )));
     }
 
     Ok(c)
