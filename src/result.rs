@@ -14,15 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+use std::ops::Range;
+
 use colored::Colorize;
 use rustc_hash::FxHashMap;
-use std::ops::Range;
+use serde::{Deserialize, Serialize};
 
 /// Struct for storing (partial) query matches.
 /// We really don't want to keep track of tree-sitter AST lifetimes so
 /// we do not store full nodes, but only their source range.
 /// TODO: Improve this struct + benchmarking
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct QueryResult {
     // for each captured node we store the offset ranges of its src location
     pub captures: Vec<CaptureResult>,
@@ -37,7 +39,7 @@ pub struct QueryResult {
 /// We also store the corresponding query id and capture index
 /// to make it possible to look up the result for a certain capture
 /// index (see QueryResult::get_capture_result)
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct CaptureResult {
     pub range: std::ops::Range<usize>,
     pub query_id: usize,
