@@ -24,7 +24,7 @@ use serde::{Deserialize, Serialize};
 /// We really don't want to keep track of tree-sitter AST lifetimes so
 /// we do not store full nodes, but only their source range.
 /// TODO: Improve this struct + benchmarking
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
 pub struct QueryResult {
     // for each captured node we store the offset ranges of its src location
     pub captures: Vec<CaptureResult>,
@@ -39,7 +39,7 @@ pub struct QueryResult {
 /// We also store the corresponding query id and capture index
 /// to make it possible to look up the result for a certain capture
 /// index (see QueryResult::get_capture_result)
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
 pub struct CaptureResult {
     pub range: std::ops::Range<usize>,
     pub query_id: usize,
