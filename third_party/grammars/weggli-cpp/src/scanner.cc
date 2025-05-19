@@ -94,24 +94,24 @@ struct Scanner {
 
 extern "C" {
 
-void *tree_sitter_cpp_external_scanner_create() {
+void *weggli_tree_sitter_cpp_external_scanner_create() {
   return new Scanner();
 }
 
-bool tree_sitter_cpp_external_scanner_scan(void *payload, TSLexer *lexer,
+bool weggli_tree_sitter_cpp_external_scanner_scan(void *payload, TSLexer *lexer,
                                             const bool *valid_symbols) {
   Scanner *scanner = static_cast<Scanner *>(payload);
   return scanner->scan(lexer, valid_symbols);
 }
 
-unsigned tree_sitter_cpp_external_scanner_serialize(void *payload, char *buffer) {
+unsigned weggli_tree_sitter_cpp_external_scanner_serialize(void *payload, char *buffer) {
   return 0;
 }
 
-void tree_sitter_cpp_external_scanner_deserialize(void *payload, const char *buffer, unsigned length) {
+void weggli_tree_sitter_cpp_external_scanner_deserialize(void *payload, const char *buffer, unsigned length) {
 }
 
-void tree_sitter_cpp_external_scanner_destroy(void *payload) {
+void weggli_tree_sitter_cpp_external_scanner_destroy(void *payload) {
   Scanner *scanner = static_cast<Scanner *>(payload);
   delete scanner;
 }

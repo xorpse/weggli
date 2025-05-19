@@ -1,6 +1,6 @@
 [package]
 name = "wegglix"
-version = "0.2.7"
+version = "0.2.8"
 authors = ["fwilhelm"]
 edition = "2021"
 license = "Apache-2.0"
