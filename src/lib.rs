@@ -31,8 +31,8 @@ pub mod result;
 mod util;
 
 extern "C" {
-    fn tree_sitter_c() -> Language;
-    fn tree_sitter_cpp() -> Language;
+    fn weggli_tree_sitter_c() -> Language;
+    fn weggli_tree_sitter_cpp() -> Language;
 }
 
 #[derive(Debug, Error)]
@@ -56,9 +56,9 @@ pub fn parse(source: &str, cpp: bool) -> Result<Tree, WeggliError> {
 
 pub fn get_parser(cpp: bool) -> Result<Parser, WeggliError> {
     let language = if !cpp {
-        unsafe { tree_sitter_c() }
+        unsafe { weggli_tree_sitter_c() }
     } else {
-        unsafe { tree_sitter_cpp() }
+        unsafe { weggli_tree_sitter_cpp() }
     };
 
     let mut parser = Parser::new();
@@ -70,9 +70,9 @@ pub fn get_parser(cpp: bool) -> Result<Parser, WeggliError> {
 // Internal helper function to create a new tree-sitter query.
 fn ts_query(sexpr: &str, cpp: bool) -> Result<tree_sitter::Query, WeggliError> {
     let language = if !cpp {
-        unsafe { tree_sitter_c() }
+        unsafe { weggli_tree_sitter_c() }
     } else {
-        unsafe { tree_sitter_cpp() }
+        unsafe { weggli_tree_sitter_cpp() }
     };
 
     match Query::new(&language, sexpr) {

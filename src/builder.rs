@@ -479,6 +479,7 @@ impl QueryBuilder {
         c.goto_parent();
 
         log::debug!("generated query: {}", result);
+
         Ok(result + ")")
     }
 
