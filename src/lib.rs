@@ -21,7 +21,7 @@ use colored::Colorize;
 use query::QueryTree;
 use regex::Regex;
 use thiserror::Error;
-use tree_sitter::{Language, Parser, Query, Tree};
+use tree_sitter::{Parser, Query, Tree};
 
 pub mod builder;
 pub mod capture;
@@ -29,11 +29,6 @@ pub mod query;
 pub mod result;
 
 mod util;
-
-extern "C" {
-    fn weggli_tree_sitter_c() -> Language;
-    fn weggli_tree_sitter_cpp() -> Language;
-}
 
 #[derive(Debug, Error)]
 pub enum WeggliError {
@@ -56,13 +51,13 @@ pub fn parse(source: &str, cpp: bool) -> Result<Tree, WeggliError> {
 
 pub fn get_parser(cpp: bool) -> Result<Parser, WeggliError> {
     let language = if !cpp {
-        unsafe { weggli_tree_sitter_c() }
+        tree_sitter_c::LANGUAGE
     } else {
-        unsafe { weggli_tree_sitter_cpp() }
+        tree_sitter_cpp::LANGUAGE
     };
 
     let mut parser = Parser::new();
-    parser.set_language(&language)?;
+    parser.set_language(&language.into())?;
 
     Ok(parser)
 }
@@ -70,12 +65,12 @@ pub fn get_parser(cpp: bool) -> Result<Parser, WeggliError> {
 // Internal helper function to create a new tree-sitter query.
 fn ts_query(sexpr: &str, cpp: bool) -> Result<tree_sitter::Query, WeggliError> {
     let language = if !cpp {
-        unsafe { weggli_tree_sitter_c() }
+        tree_sitter_c::LANGUAGE
     } else {
-        unsafe { weggli_tree_sitter_cpp() }
+        tree_sitter_cpp::LANGUAGE
     };
 
-    match Query::new(&language, sexpr) {
+    match Query::new(&language.into(), sexpr) {
         Ok(q) => Ok(q),
         Err(e) => {
             let errmsg = format!( "Tree sitter query generation failed: {:?}\n {} \n sexpr: {}\n This is a bug! Can't recover :/", e.kind, e.message, sexpr);
